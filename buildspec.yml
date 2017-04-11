@@ -1,0 +1,30 @@
+version: 0.1
+
+phases:
+  install:
+    commands:
+      - echo ### install maven ###
+      - apt-get update -y
+      - apt-get install -y software-properties-common
+      - which add-apt-repository
+      - add-apt-repository -y ppa:webupd8team/java
+      - apt-get update -y
+      - echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | sudo /usr/bin/debconf-set-selections
+      - apt-get install -y  oracle-java8-installer
+      - apt-get install -y maven
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR..
+      - $(aws ecr get-login --region us-west-2)
+  build:
+    commands:
+      - echo ##### mvn install ####
+      - mvn install -X
+      - mvn package
+      - echo #### docker build ####
+      - docker build -t clj/repo .
+      - docker tag clj/repo:latest 585607119391.dkr.ecr.us-west-2.amazonaws.com/clj/repo:latest 
+  post_build:
+    commands:
+      - echo #### docker push ####
+      - docker push 585607119391.dkr.ecr.us-west-2.amazonaws.com/clj/repo:latest
